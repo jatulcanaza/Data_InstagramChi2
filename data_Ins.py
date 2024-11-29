@@ -1,13 +1,13 @@
-import instaloader
-import pandas as pd
-import time
-import math  # Para funciones matemáticas
-import matplotlib.pyplot as plt
-from instaloader.exceptions import ConnectionException, BadResponseException
+import instaloader # Importa la biblioteca Instaloader, que permite realizar scraping de perfiles de Instagram.
+import pandas as pd# Importa la biblioteca pandas, útil para trabajar con datos tabulares y archivos CSV.
+import time# Importa la biblioteca time, utilizada para manejar pausas entre solicitudes y evitar bloqueos.
+import math  # Importa la biblioteca math para realizar cálculos matemáticos como logaritmos.
+import matplotlib.pyplot as plt# Importa matplotlib.pyplot para generar gráficos visuales como barras o líneas.
+from instaloader.exceptions import ConnectionException, BadResponseException # Importa excepciones específicas de Instaloader para manejar errores comunes, como problemas de conexión
 from scipy.stats import chi2  # Para calcular el valor crítico y p-valor
 
 # Configuración
-print("*** Sistema de Scrapy en Instagram ***")
+print("Data de Instagram")
 nombre_usuario = input("Ingrese su nombre de usuario (Instagram): ")
 contrasena_usuario = input("Ingrese la contraseña de su Instagram: ")
 nombre_usuario_formateado = nombre_usuario.replace(" ", "_").lower()
@@ -76,18 +76,38 @@ if data:  # Solo generar el gráfico si hay datos
     digit_counts = df["first_digit"].value_counts().sort_index()
 
     # Cálculo de Chi-Cuadrado
+   # Valores observados: la cantidad de ocurrencias de cada primer dígito en los datos
     observed = digit_counts.values
+
+# Total de seguidores contados (suma de todos los valores observados)
     total_followers = observed.sum()
+
+# Valores esperados según la Ley de Benford
+# Para cada dígito d (de 1 a 9), calculamos la proporción esperada usando log10(1 + 1/d)
+# Luego multiplicamos por el total de seguidores para obtener la frecuencia esperada
     expected = [total_followers * (math.log10(1 + 1 / d)) for d in range(1, 10)]
+
+# Cálculo de la estadística Chi-Cuadrado
+    # Sumatoria de (O - E)^2 / E, donde O es el valor observado y E el esperado
     chi_squared = sum((o - e) ** 2 / e for o, e in zip(observed, expected))
+
+# Grados de libertad: número de categorías menos 1
     degrees_of_freedom = len(expected) - 1
+
+# Valor crítico de Chi-Cuadrado para el nivel de confianza del 95% (0.05 de significancia)
     critical_value = chi2.ppf(0.95, degrees_of_freedom)
+
+# P-valor asociado al Chi-Cuadrado calculado
+# Es la probabilidad de obtener un valor de Chi-Cuadrado igual o mayor al observado si las frecuencias siguen la distribución esperada
     p_value = 1 - chi2.cdf(chi_squared, degrees_of_freedom)
 
+# Verificación de la hipótesis: comparación entre el Chi-Cuadrado calculado y el valor crítico
+# Si el valor calculado es menor que el crítico, los datos cumplen con la Ley de Benford
     if chi_squared < critical_value:
         conclusion = "Cumple con la Ley de Benford"
     else:
         conclusion = "No cumple con la Ley de Benford"
+
 
     # Crear el gráfico
     plt.bar(digit_counts.index, digit_counts.values, color="skyblue")
@@ -97,9 +117,9 @@ if data:  # Solo generar el gráfico si hay datos
 
 # Agregar texto con el resultado del Chi-Cuadrado fuera de la cuadrícula
     plt.text(
-        10,  # Colocamos el texto fuera de la cuadrícula en el eje X (ajustable)
+        6,  # Colocamos el texto fuera de la cuadrícula en el eje X (ajustable)
         max(digit_counts.values) * 0.9,  # Altura donde aparece el texto (ajustable)
-        f"Chi-Squared: {chi_squared:.2f}\nCritical Value: {critical_value:.2f}\n{conclusion}",
+        f"Chi Cuadrado obtenido: {chi_squared:.2f}\nValor Crítico: {critical_value:.2f}\n{conclusion}",
         fontsize=10, color="red", bbox=dict(facecolor="white", alpha=0.7)
     )
 
@@ -114,3 +134,4 @@ if data:  # Solo generar el gráfico si hay datos
 
 else:
     print("No se generó ningún gráfico porque no hay datos suficientes.")
+
